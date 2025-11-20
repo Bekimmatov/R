@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imtihon Vaqt Hisoblagich</title>
+    <style>
+        /* CSS qismi avvalgi holatida qoldirildi */
+        :root {
+            --ring-duration: 0s; 
+            --orange-color: #ff8c00; 
+            --dark-bg-color: #0d0d0d; 
+            --dark-bg-accent: #1a1a1a;
+            --light-text-color: #f0f0f0;
+            --g-color-1: #4B0082; 
+            --g-color-2: #800080; 
+            --g-color-3: #FF4500; 
+            --g-color-4: #00BFFF; 
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            /* To'liq ekranga moslashishni ta'minlash */
+            min-height: 100vh; 
+            /* Yuqori va pastki qismlarda 10px minimal bo'shliq qoldiramiz */
+            padding: 10px; 
+            margin: 0;
+            color: var(--light-text-color);
+            background: linear-gradient(135deg, var(--dark-bg-color) 0%, var(--g-color-1) 20%, var(--g-color-2) 40%, var(--dark-bg-accent) 60%, var(--g-color-4) 80%, var(--dark-bg-color) 100%);
+            background-size: 500% 500%; 
+            animation: background-animate 30s ease infinite; 
+            /* Overflow (pastga o'tib ketish) holatini yashirmaymiz */
+            overflow: auto; 
+            position: relative;
+            box-sizing: border-box;
+        }
+        
+        /* ... background-animate va gradient-text animatsiyalari o'zgarishsiz ... */
+
+        @keyframes background-animate {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            z-index: -1;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, var(--g-color-3), var(--g-color-4), var(--g-color-1), var(--g-color-3));
+            background-size: 300% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: text-gradient 8s linear infinite;
+            filter: drop-shadow(0 0 5px rgba(255, 140, 0, 0.4)); 
+        }
+
+        @keyframes text-gradient {
+            to { background-position: 300% center; }
+        }
+
+        .countdown-container {
+            text-align: center;
+            /* Vertikal bo'shliqni kamaytirdik, gorizontal bo'shliqni saqladik */
+            padding: 2.5vh 3vw; 
+            border-radius: 25px;
+            background: rgba(0, 0, 0, 0.5); 
+            box-shadow: 0 0 60px rgba(255, 140, 0, 0.2), 0 0 100px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px); 
+            max-width: 90%; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            /* Pastki elementlar bilan minimal bo'shliq */
+            margin-bottom: 2vh; 
+        }
+
+        h1 {
+            font-size: clamp(1.5em, 5vw, 2.5em);
+            margin-bottom: 10px;
+        }
+
+        .exam-info {
+            font-size: clamp(1em, 3vw, 1.3em);
+            /* Vertikal bo'shliqni balandlik birligida beramiz */
+            margin-bottom: clamp(10px, 3vh, 30px); 
+            opacity: 0.7;
+        }
+        
+        /* --- TIMER DISPLAY UCHUN ASOSIY O'LCHAMLAR --- */
+        .timer-display {
+            position: relative;
+            max-width: 450px; 
+            max-height: 450px;
+            /* Aylana o'lchamini yanada optimallashtirish */
+            width: min(70vw, 70vh); 
+            height: min(70vw, 70vh);
+            margin: 0 auto 2vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .time-value {
+            position: absolute;
+            font-size: min(15vw, 15vh, 6em); 
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .progress-ring {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            stroke-width: clamp(15px, 3vw, 25px);
+        }
+        
+        .supervisor {
+            /* Pastki bo'shliqni kamaytiramiz */
+            margin-top: 2vh;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: clamp(1em, 2vw, 1.5em);
+            font-weight: 600;
+        }
+        
+        /* Audio faollashtirish tugmasi uslubi */
+        #audio-enable-btn {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            font-size: clamp(1.5em, 5vw, 3em); 
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            opacity: 0.95;
+            transition: opacity 0.5s;
+        }
+
+        /* Kichik ekranlar (Mobile) */
+        @media (max-width: 600px) {
+            .countdown-container {
+                padding: 2vh 20px; 
+            }
+        }
+        /* Katta ekranlar (Katta monitorlar) */
+        @media (min-width: 1400px) {
+             .timer-display {
+                max-width: 600px;
+                max-height: 600px;
+             }
+             .time-value {
+                font-size: 6em;
+             }
+        }
+    </style>
+</head>
+<body>
+    <audio id="alert-audio" src="https://github.com/Bekimmatov/R/raw/refs/heads/mp3/big-ben-129049.mp3" preload="auto"></audio>
+    
+    <button id="audio-enable-btn">
+        🔊 BOSHLASH<br><small style="opacity: 0.7;"></small>
+    </button>
+
+    <div class="countdown-container">
+        <h1 class="gradient-text">IMTIHON TUGASHIGA QOLGAN VAQT ...</h1>
+        <h2 class="exam-info"> tugash vaqti: 2025-yil 21-noyabr, 11:50</h2>
+
+        <div class="timer-display">
+            <svg class="progress-ring" viewBox="0 0 350 350">
+                <circle
+                    stroke="rgba(255, 255, 255, 0.05)"
+                    stroke-width="20" 
+                    fill="transparent"
+                    r="165" 
+                    cx="175"
+                    cy="175"
+                />
+                <circle
+                    class="progress-ring__circle progress-ring__circle-animated"
+                    id="progress-ring-circle"
+                    stroke="var(--orange-color)"
+                    stroke-width="20"
+                    fill="transparent"
+                    r="165"
+                    cx="175"
+                    cy="175"
+                    stroke-dasharray="1036.7" 
+                    stroke-dashoffset="0"
+                />
+            </svg>
+            
+            <span id="countdown-value" class="time-value gradient-text">00:00:00</span>
+            </div>
+
+        <p id="message" class="gradient-text"></p>
+    
+    
+    <div class="supervisor gradient-text">
+        Nazoratchi: <b>Rahmatjon Bekimmatov</b>
+    </div>
+    </div>
+
+    <script>
+        // JavaScript qismi o'zgartirilmadi.
+        
+        // --- GLOBAL O'ZGARUVCHILAR ---
+        const targetDate = new Date(2025, 10, 21, 11, 50, 0).getTime(); 
+        
+        const countdownValue = document.getElementById('countdown-value');
+        const message = document.getElementById('message');
+        const ringCircle = document.getElementById('progress-ring-circle');
+        const audio = document.getElementById('alert-audio');
+        const enableBtn = document.getElementById('audio-enable-btn');
+
+        const timeAlerts = [30, 20, 10, 5, 1, 0]; 
+        const playedAlerts = {}; 
+        let countdownInterval;
+        let isAudioEnabled = false; 
+        
+        const startDate = new Date().getTime();
+        let totalDuration = targetDate - startDate;
+        const circleLength = 1036.7; 
+
+        // --- FUNKSIYALAR ---
+
+        function playAudio() {
+            if (!isAudioEnabled) return; 
+            audio.pause();
+            audio.currentTime = 0;
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {}).catch(error => {
+                    console.error("Audio ijrosi xatosi:", error);
+                });
+            }
+        }
+        
+        function checkAlerts(totalSeconds) {
+            const remainingMinutes = Math.ceil(totalSeconds / 60);
+            for (const alertMin of timeAlerts) {
+                if (remainingMinutes === alertMin && !playedAlerts[alertMin]) {
+                    playAudio();
+                    playedAlerts[alertMin] = true; 
+                    
+                    if (alertMin === 0) {
+                         message.innerHTML = '<h2>✅ Vaqt tugadi!</h2>';
+                    } else {
+                        message.innerHTML = `<h2 class="gradient-text">🔔 ${alertMin} daqiqa qoldi!</h2>`;
+                        setTimeout(() => {
+                             if(remainingMinutes > 0) message.innerHTML = '';
+                        }, 5000);
+                    }
+                    break; 
+                }
+            }
+        }
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            let distance = targetDate - now;
+
+            if (distance < 0) {
+                distance = 0;
+            }
+            
+            const totalSeconds = Math.floor(distance / 1000);
+            
+            if (isAudioEnabled) {
+                checkAlerts(totalSeconds); 
+            }
+            
+            const hours = Math.floor(totalSeconds / (60 * 60));
+            const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+
+            const formatTime = (time) => String(time).padStart(2, '0');
+            
+            countdownValue.textContent = `${formatTime(hours)}:${formatTime(minutes)}:${formatTime(seconds)}`;
+            
+            if (distance === 0) {
+                clearInterval(countdownInterval);
+                if (!playedAlerts[0]) {
+                    message.innerHTML = '<h2>✅ Vaqt tugadi!</h2>';
+                }
+                ringCircle.style.animationPlayState = 'paused';
+                ringCircle.style.strokeDashoffset = circleLength;
+                return;
+            }
+        }
+
+        // --- BOSHLANISH FUNKSIYASI ---
+
+        ringCircle.setAttribute('stroke-dasharray', circleLength);
+        if (totalDuration > 0) {
+            const animationDurationSeconds = totalDuration / 1000;
+            document.documentElement.style.setProperty('--ring-duration', `${animationDurationSeconds}s`);
+            const elapsedSinceStart = new Date().getTime() - startDate;
+            const animationDelay = -elapsedSinceStart / 1000;
+            ringCircle.style.animationDelay = `${animationDelay}s`;
+        } else {
+             ringCircle.style.strokeDashoffset = circleLength;
+             ringCircle.style.animationPlayState = 'paused';
+        }
+
+        enableBtn.addEventListener('click', () => {
+            isAudioEnabled = true;
+            enableBtn.style.display = 'none';
+            
+            if (totalDuration > 0) {
+                playAudio(); 
+            }
+
+            if (totalDuration > 0) {
+                countdownInterval = setInterval(updateCountdown, 1000);
+            }
+            
+            updateCountdown();
+        });
+
+        if (totalDuration <= 0) {
+             enableBtn.style.display = 'none';
+             isAudioEnabled = true;
+             updateCountdown();
+        }
+
+    </script>
+</body>
+</html>
